@@ -10,6 +10,7 @@ import asyncio
 from datetime import datetime, timedelta
 import time
 import re
+import argparse
 
 
 @dataclass
@@ -242,9 +243,25 @@ async def fetch_content(url: str, ctx: Context) -> str:
 
 
 def main():
-    mcp.settings.host="0.0.0.0"
-    mcp.settings.port=18000
+    parser = argparse.ArgumentParser(description="DuckDuckGo MCP Server")
+    parser.add_argument(
+        "--host",
+        type=str,
+        default="0.0.0.0",
+        help="Host to bind the server to.",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port to run the server on.",
+    )
+    args = parser.parse_args()
+
+    mcp.settings.host = args.host
+    mcp.settings.port = args.port
     mcp.run(transport="sse")
+
 
 if __name__ == "__main__":
     main()

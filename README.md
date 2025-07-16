@@ -12,30 +12,34 @@ A Model Context Protocol (MCP) server that provides web search capabilities thro
 
 ## Usage
 
+### Installation
+
+You can install the server using pip:
+
+```bash
+pip install duckduckgo-mcp-server-sse
+```
+
 ### Startup
 
-To manage this project, it's better to use [uv](https://docs.astral.sh/uv/getting-started/installation/).
+You can start the server using the following command:
 
-1. Clone this repository
 ```bash
-git clone https://github.com/wildoranges/duckduckgo-mcp-server-sse
-cd duckduckgo-mcp-server-sse
+duckduckgo-mcp-server-sse --host <your-host> --port <your-port>
 ```
-2. Start the server (One-time execution)
+
+- `--host`: The host to bind the server to. Defaults to `0.0.0.0`.
+- `--port`: The port to run the server on. Defaults to `8000`.
+
+For example:
+
 ```bash
-uv run python src/duckduckgo_mcp_server/server.py
+duckduckgo-mcp-server-sse --host 127.0.0.1 --port 8080
 ```
-3. Or, you can create a venv to run
-```
-uv sync
-source .venv/bin/activate
-python src/duckduckgo_mcp_server/server.py
-```
-4. You can modify [server.py](src/duckduckgo_mcp_server/server.py) to change the host and port. default is `0.0.0.0:18000`.
 
 ### Settings in CLINE
 
-Add the following configuration:
+Add the following configuration, adjusting the host and port to match your server setup:
 
 ```json
 {
@@ -44,7 +48,7 @@ Add the following configuration:
             "disabled": false,
             "timeout": 60,
             "type": "sse",
-            "url": "http://0.0.0.0:18000/sse",
+            "url": "http://127.0.0.1:8000/sse",
             "headers": {
                 "Accept": "application/json, text/event-stream"
             }
