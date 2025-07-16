@@ -15,7 +15,7 @@ RUN pip install --upgrade pip \
     && pip install --no-cache-dir .
 
 # Expose the port the server runs on
-EXPOSE 18000
+EXPOSE 8000
 
 # Run the MCP server using the installed script
 CMD ["duckduckgo-mcp-server-sse"]
