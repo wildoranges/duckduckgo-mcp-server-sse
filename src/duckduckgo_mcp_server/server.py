@@ -133,8 +133,8 @@ class DuckDuckGoSearcher:
             await ctx.info(f"Successfully found {len(results)} results")
             return results
 
-        except httpx.TimeoutException:
-            await ctx.error("Search request timed out")
+        except httpx.RequestError as e:
+            await ctx.error(f"An HTTP request error occurred: {str(e)}")
             return []
         except httpx.HTTPError as e:
             await ctx.error(f"HTTP error occurred: {str(e)}")
@@ -194,9 +194,9 @@ class WebContentFetcher:
             )
             return text
 
-        except httpx.TimeoutException:
-            await ctx.error(f"Request timed out for URL: {url}")
-            return "Error: The request timed out while trying to fetch the webpage."
+        except httpx.RequestError as e:
+            await ctx.error(f"An HTTP request error occurred while fetching {url}: {str(e)}")
+            return f"Error: An HTTP request error occurred while fetching the webpage ({str(e)})"
         except httpx.HTTPError as e:
             await ctx.error(f"HTTP error occurred while fetching {url}: {str(e)}")
             return f"Error: Could not access the webpage ({str(e)})"
@@ -206,7 +206,7 @@ class WebContentFetcher:
 
 
 # Initialize FastMCP server
-mcp = FastMCP("ddg-search")
+mcp = FastMCP("ddg-search-sse")
 searcher = DuckDuckGoSearcher()
 fetcher = WebContentFetcher()
 
@@ -242,8 +242,9 @@ async def fetch_content(url: str, ctx: Context) -> str:
 
 
 def main():
-    mcp.run()
-
+    mcp.settings.host="0.0.0.0"
+    mcp.settings.port=18000
+    mcp.run(transport="sse")
 
 if __name__ == "__main__":
     main()

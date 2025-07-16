@@ -1,12 +1,6 @@
-# DuckDuckGo Search MCP Server
+# DuckDuckGo Search MCP Server (SSE)
 
-[![smithery badge](https://smithery.ai/badge/@nickclyde/duckduckgo-mcp-server)](https://smithery.ai/server/@nickclyde/duckduckgo-mcp-server)
-
-A Model Context Protocol (MCP) server that provides web search capabilities through DuckDuckGo, with additional features for content fetching and parsing.
-
-<a href="https://glama.ai/mcp/servers/phcus2gcpn">
-  <img width="380" height="200" src="https://glama.ai/mcp/servers/phcus2gcpn/badge" alt="DuckDuckGo Server MCP server" />
-</a>
+A Model Context Protocol (MCP) server that provides web search capabilities through DuckDuckGo, with additional features for content fetching and parsing, running over HTTP (SSE).
 
 ## Features
 
@@ -16,59 +10,49 @@ A Model Context Protocol (MCP) server that provides web search capabilities thro
 - **Error Handling**: Comprehensive error handling and logging
 - **LLM-Friendly Output**: Results formatted specifically for large language model consumption
 
-## Installation
-
-### Installing via Smithery
-
-To install DuckDuckGo Search Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@nickclyde/duckduckgo-mcp-server):
-
-```bash
-npx -y @smithery/cli install @nickclyde/duckduckgo-mcp-server --client claude
-```
-
-### Installing via `uv`
-
-Install directly from PyPI using `uv`:
-
-```bash
-uv pip install duckduckgo-mcp-server
-```
-
 ## Usage
 
-### Running with Claude Desktop
+### Startup
 
-1. Download [Claude Desktop](https://claude.ai/download)
-2. Create or edit your Claude Desktop configuration:
-   - On macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - On Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+To manage this project, it's better to use [uv](https://docs.astral.sh/uv/getting-started/installation/).
+
+1. Clone this repository
+```bash
+git clone https://github.com/wildoranges/duckduckgo-mcp-server-sse
+cd duckduckgo-mcp-server-sse
+```
+2. Start the server (One-time execution)
+```bash
+uv run python src/duckduckgo_mcp_server/server.py
+```
+3. Or, you can create a venv to run
+```
+uv sync
+source .venv/bin/activate
+python src/duckduckgo_mcp_server/server.py
+```
+4. You can modify [server.py](src/duckduckgo_mcp_server/server.py) to change the host and port. default is `0.0.0.0:18000`.
+
+### Settings in CLINE
 
 Add the following configuration:
 
 ```json
 {
     "mcpServers": {
-        "ddg-search": {
-            "command": "uvx",
-            "args": ["duckduckgo-mcp-server"]
+        "ddg-search-sse": {
+            "disabled": false,
+            "timeout": 60,
+            "type": "sse",
+            "url": "http://0.0.0.0:18000/sse",
+            "headers": {
+                "Accept": "application/json, text/event-stream"
+            }
         }
     }
 }
 ```
 
-3. Restart Claude Desktop
-
-### Development
-
-For local development, you can use the MCP CLI:
-
-```bash
-# Run with the MCP Inspector
-mcp dev server.py
-
-# Install locally for testing with Claude Desktop
-mcp install server.py
-```
 ## Available Tools
 
 ### 1. Search Tool
