@@ -11,6 +11,10 @@ from datetime import datetime, timedelta
 import time
 import re
 import argparse
+import signal
+from scholarly import scholarly, ProxyGenerator
+import logging
+import json
 
 
 @dataclass
@@ -206,10 +210,60 @@ class WebContentFetcher:
             return f"Error: An unexpected error occurred while fetching the webpage ({str(e)})"
 
 
+class ScholarSearcher:
+    def __init__(self):
+        # Proxy setup is now handled within the search method to ensure thread safety
+        pass
+
+    def format_results_for_llm(self, results: List[Dict]) -> str:
+        """Format results in a natural language style that's easier for LLMs to process"""
+        if not results:
+            return "No results were found for your search query on Google Scholar."
+
+        output = []
+        output.append(f"Found {len(results)} search results:\n")
+
+        for i, result in enumerate(results):
+            output.append(f"{i+1}. {result.get('bib', {}).get('title', 'N/A')}")
+            output.append(f"   Authors: {', '.join(result.get('bib', {}).get('author', []))}")
+            output.append(f"   Venue: {result.get('bib', {}).get('venue', 'N/A')}")
+            output.append(f"   Year: {result.get('bib', {}).get('pub_year', 'N/A')}")
+            output.append(f"   URL: {result.get('pub_url', 'N/A')}")
+            output.append(f"   Abstract: {result.get('bib', {}).get('abstract', 'N/A')}")
+            output.append("")
+
+        return "\n".join(output)
+
+    async def search(self, query: str, ctx: Context, max_results: int = 10) -> List[Dict]:
+        try:
+            await ctx.info(f"Searching Google Scholar for: {query}")
+            # loop = asyncio.get_event_loop()
+            
+            def search_with_limit():
+                results = []
+                search_results_iterator = scholarly.search_pubs(query)
+                for i, pub in enumerate(search_results_iterator):
+                    if i >= max_results:
+                        break
+                    results.append(pub)
+                return results
+
+            search_results = search_with_limit()
+            
+            results = search_results
+
+            await ctx.info(f"Successfully found {len(results)} results on Google Scholar")
+            return results
+        except Exception as e:
+            await ctx.error(f"Unexpected error during Scholar search: {str(e)}")
+            traceback.print_exc(file=sys.stderr)
+            return []
+
 # Initialize FastMCP server
 mcp = FastMCP("ddg-search-sse")
 searcher = DuckDuckGoSearcher()
 fetcher = WebContentFetcher()
+scholar_searcher = ScholarSearcher()
 
 
 @mcp.tool()
@@ -240,6 +294,24 @@ async def fetch_content(url: str, ctx: Context) -> str:
         ctx: MCP context for logging
     """
     return await fetcher.fetch_and_parse(url, ctx)
+
+
+@mcp.tool()
+async def scholar_search(query: str, ctx: Context, max_results: int = 10) -> str:
+    """
+    Search Google Scholar and return formatted results.
+
+    Args:
+        query: The search query string
+        max_results: Maximum number of results to return (default: 10)
+        ctx: MCP context for logging
+    """
+    try:
+        results = await scholar_searcher.search(query, ctx, max_results)
+        return scholar_searcher.format_results_for_llm(results)
+    except Exception as e:
+        traceback.print_exc(file=sys.stderr)
+        return f"An error occurred while searching Google Scholar: {str(e)}"
 
 
 def main():
