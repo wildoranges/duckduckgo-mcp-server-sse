@@ -234,16 +234,17 @@ class ScholarSearcher:
 
         return "\n".join(output)
 
-    async def search(self, query: str, ctx: Context, max_results: int = 10) -> List[Dict]:
+    async def search(self, query: str, ctx: Context, max_results: int = 10, year_low: Optional[int] = None, year_high: Optional[int] = None, sort_by: str = 'relevance', start_index: int = 0) -> List[Dict]:
         try:
             await ctx.info(f"Searching Google Scholar for: {query}")
-            # loop = asyncio.get_event_loop()
             
             def search_with_limit():
                 results = []
-                search_results_iterator = scholarly.search_pubs(query)
+                search_results_iterator = scholarly.search_pubs(query=query, year_low=year_low, year_high=year_high, sort_by=sort_by)
                 for i, pub in enumerate(search_results_iterator):
-                    if i >= max_results:
+                    if i < start_index:
+                        continue
+                    if len(results) >= max_results:
                         break
                     results.append(pub)
                 return results
@@ -297,17 +298,21 @@ async def fetch_content(url: str, ctx: Context) -> str:
 
 
 @mcp.tool()
-async def scholar_search(query: str, ctx: Context, max_results: int = 10) -> str:
+async def scholar_search(query: str, ctx: Context, max_results: int = 10, year_low: Optional[int] = None, year_high: Optional[int] = None, sort_by: str = 'relevance', start_index: int = 0) -> str:
     """
     Search Google Scholar and return formatted results.
 
     Args:
         query: The search query string
         max_results: Maximum number of results to return (default: 10)
+        year_low: Minimum year of publication (default: None)
+        year_high: Maximum year of publication (default: None)
+        sort_by: 'relevance' or 'date' (default: relevance)
+        start_index: Starting index of list of publications (default: 0)
         ctx: MCP context for logging
     """
     try:
-        results = await scholar_searcher.search(query, ctx, max_results)
+        results = await scholar_searcher.search(query, ctx, max_results, year_low, year_high, sort_by, start_index)
         return scholar_searcher.format_results_for_llm(results)
     except Exception as e:
         traceback.print_exc(file=sys.stderr)
