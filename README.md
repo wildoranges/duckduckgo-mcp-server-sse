@@ -1,10 +1,10 @@
-# DuckDuckGo Search MCP Server (SSE)
+# Scholar Search MCP Server (SSE)
 
-A Model Context Protocol (MCP) server that provides web search capabilities through DuckDuckGo, with additional features for content fetching and parsing, running over HTTP (SSE).
+A Model Context Protocol (MCP) server that provides web search capabilities through DuckDuckGo and Google Scholar, with additional features for content fetching and parsing, running over HTTP (SSE).
 
 ## Features
 
-- **Web Search**: Search DuckDuckGo with advanced rate limiting and result formatting
+- **Web Search**: Search DuckDuckGo and Google Scholar with advanced rate limiting and result formatting
 - **Content Fetching**: Retrieve and parse webpage content with intelligent text extraction
 - **Rate Limiting**: Built-in protection against rate limits for both search and content fetching
 - **Error Handling**: Comprehensive error handling and logging
@@ -17,7 +17,7 @@ A Model Context Protocol (MCP) server that provides web search capabilities thro
 You can install the server using pip:
 
 ```bash
-pip install duckduckgo-mcp-server-sse
+pip install scholar-mcp-server-sse
 ```
 
 ### Startup
@@ -25,7 +25,7 @@ pip install duckduckgo-mcp-server-sse
 You can start the server using the following command:
 
 ```bash
-duckduckgo-mcp-server-sse --host <your-host> --port <your-port>
+scholar-mcp-server-sse --host <your-host> --port <your-port>
 ```
 
 - `--host`: The host to bind the server to. Defaults to `0.0.0.0`.
@@ -44,7 +44,7 @@ Add the following configuration, adjusting the host and port to match your serve
 ```json
 {
     "mcpServers": {
-        "ddg-search-sse": {
+        "scholar-search-sse": {
             "disabled": false,
             "timeout": 60,
             "type": "sse",
@@ -87,6 +87,25 @@ Fetches and parses content from a webpage.
 
 **Returns:**
 Cleaned and formatted text content from the webpage.
+
+### 3. Scholar Search Tool
+
+```python
+async def scholar_search(query: str, max_results: int = 10, year_low: int = None, year_high: int = None, sort_by: str = 'relevance', start_index: int = 0) -> str
+```
+
+Performs a search on Google Scholar and returns formatted results.
+
+**Parameters:**
+- `query`: Search query string
+- `max_results`: Maximum number of results to return (default: 10)
+- `year_low`: Minimum year of publication (optional)
+- `year_high`: Maximum year of publication (optional)
+- `sort_by`: Sort by 'relevance' or 'date' (default: 'relevance')
+- `start_index`: Starting index of the result list (default: 0)
+
+**Returns:**
+Formatted string containing search results with titles, authors, publication details, and summaries.
 
 ## Features in Detail
 
