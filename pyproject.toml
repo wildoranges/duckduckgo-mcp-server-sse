@@ -1,12 +1,12 @@
 [project]
-name = "duckduckgo-mcp-server-sse"
+name = "scholar-mcp-server-sse"
 version = "0.1.1.post1"
-description = "MCP Server (SSE) for searching via DuckDuckGo"
+description = "MCP Server (SSE) for searching via DuckDuckGo and Google Scholar"
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "Nick Clyde", email = "nick@clyde.tech" }, {name = "wildoranges", email = "zkd18cjb@mail.ustc.edu.cn"}]
 requires-python = ">=3.10"
-dependencies = ["beautifulsoup4>=4.13.3", "httpx>=0.28.1", "mcp[cli]>=1.3.0"]
+dependencies = ["beautifulsoup4>=4.13.3", "httpx==0.27.2", "mcp[cli]>=1.3.0", "scholarly>=1.7.11"]
 keywords = ["mcp", "search", "duckduckgo", "web-search", "sse", "http"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -24,7 +24,7 @@ Homepage = "https://github.com/wildoranges/duckduckgo-mcp-server-sse"
 Issues = "https://github.com/wildoranges/duckduckgo-mcp-server-sse/issues"
 
 [project.scripts]
-duckduckgo-mcp-server-sse = "duckduckgo_mcp_server.server:main"
+scholar-mcp-server-sse = "duckduckgo_mcp_server.server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/duckduckgo_mcp_server"]
