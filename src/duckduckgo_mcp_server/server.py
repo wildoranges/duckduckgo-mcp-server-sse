@@ -215,7 +215,7 @@ class ScholarSearcher:
         # Proxy setup is now handled within the search method to ensure thread safety
         pass
 
-    def format_results_for_llm(self, results: List[Dict]) -> str:
+    def format_results_for_llm(self, results: List[Dict], format: str = "bibtex") -> str:
         """Format results in a natural language style that's easier for LLMs to process"""
         if not results:
             return "No results were found for your search query on Google Scholar."
@@ -223,14 +223,20 @@ class ScholarSearcher:
         output = []
         output.append(f"Found {len(results)} search results:\n")
 
-        for i, result in enumerate(results):
-            output.append(f"{i+1}. {result.get('bib', {}).get('title', 'N/A')}")
-            output.append(f"   Authors: {', '.join(result.get('bib', {}).get('author', []))}")
-            output.append(f"   Venue: {result.get('bib', {}).get('venue', 'N/A')}")
-            output.append(f"   Year: {result.get('bib', {}).get('pub_year', 'N/A')}")
-            output.append(f"   URL: {result.get('pub_url', 'N/A')}")
-            output.append(f"   Abstract: {result.get('bib', {}).get('abstract', 'N/A')}")
-            output.append("")
+        if format == "text":
+            for i, result in enumerate(results):
+                output.append(f"{i+1}. {result.get('bib', {}).get('title', 'N/A')}")
+                output.append(f"   Authors: {', '.join(result.get('bib', {}).get('author', []))}")
+                output.append(f"   Venue: {result.get('bib', {}).get('venue', 'N/A')}")
+                output.append(f"   Year: {result.get('bib', {}).get('pub_year', 'N/A')}")
+                output.append(f"   URL: {result.get('pub_url', 'N/A')}")
+                output.append(f"Abstract:\n{result.get('bib', {}).get('abstract', 'N/A')}")
+                output.append("")
+        else:  # bibtex format
+            for i, result in enumerate(results):
+                output.append(f"{i+1}. {result.get('bib', {}).get('title', 'N/A')}")
+                output.append(f"{result.get('bibtex', {})}")
+                output.append("")
 
         return "\n".join(output)
 
@@ -238,20 +244,24 @@ class ScholarSearcher:
         try:
             await ctx.info(f"Searching Google Scholar for: {query}")
             
-            def search_with_limit():
+            async def search_with_limit():
                 results = []
-                search_results_iterator = scholarly.search_pubs(query=query, year_low=year_low, year_high=year_high, sort_by=sort_by)
-                for i, pub in enumerate(search_results_iterator):
-                    if i < start_index:
-                        continue
-                    if len(results) >= max_results:
-                        break
-                    results.append(pub)
+                try:
+                    search_results_iterator = scholarly.search_pubs(query=query, year_low=year_low, year_high=year_high, sort_by=sort_by, start_index=start_index)
+                    for i, pub in enumerate(search_results_iterator):
+                        if len(results) >= max_results:
+                            break
+                        await asyncio.sleep(0.5) # Sleep to avoid rate limiting 
+                        bibtex = scholarly.bibtex(pub)
+                        pub['bibtex'] = bibtex
+                        results.append(pub)
+                except Exception as e:
+                    await ctx.error(f"Failed to fetch bib content for query {query}: {str(e)}, the search results may be incomplete")
+                    return results
+                    
                 return results
 
-            search_results = search_with_limit()
-            
-            results = search_results
+            results = await search_with_limit()
 
             await ctx.info(f"Successfully found {len(results)} results on Google Scholar")
             return results
@@ -298,7 +308,7 @@ async def fetch_content(url: str, ctx: Context) -> str:
 
 
 @mcp.tool()
-async def scholar_search(query: str, ctx: Context, max_results: int = 10, year_low: Optional[int] = None, year_high: Optional[int] = None, sort_by: str = 'relevance', start_index: int = 0) -> str:
+async def scholar_search(query: str, ctx: Context, max_results: int = 10, year_low: Optional[int] = None, year_high: Optional[int] = None, sort_by: str = 'relevance', start_index: int = 0, format: str = "bibtex") -> str:
     """
     Search Google Scholar and return formatted results.
 
@@ -309,11 +319,12 @@ async def scholar_search(query: str, ctx: Context, max_results: int = 10, year_l
         year_high: Maximum year of publication (default: None)
         sort_by: 'relevance' or 'date' (default: relevance)
         start_index: Starting index of list of publications (default: 0)
+        format: Output format, either 'text' or 'bibtex' (default: bibtex)
         ctx: MCP context for logging
     """
     try:
         results = await scholar_searcher.search(query, ctx, max_results, year_low, year_high, sort_by, start_index)
-        return scholar_searcher.format_results_for_llm(results)
+        return scholar_searcher.format_results_for_llm(results, format)
     except Exception as e:
         traceback.print_exc(file=sys.stderr)
         return f"An error occurred while searching Google Scholar: {str(e)}"
